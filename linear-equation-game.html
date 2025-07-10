@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lineární rovnice - Hra</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6fa; margin: 0; padding: 0; }
+        .container { max-width: 500px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 32px; }
+        h1 { text-align: center; color: #2a4d69; }
+        .equation { font-size: 1.5em; text-align: center; margin: 24px 0; }
+        .input-row { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 16px; }
+        input[type="number"] { font-size: 1.2em; padding: 4px 8px; width: 80px; }
+        button { font-size: 1em; padding: 6px 18px; border-radius: 4px; border: none; background: #2a4d69; color: #fff; cursor: pointer; }
+        button:disabled { background: #aaa; }
+        .result { text-align: center; font-size: 1.1em; margin: 12px 0; }
+        .steps { background: #f0f4fa; border-radius: 6px; padding: 16px; margin-top: 18px; }
+        .step { margin-bottom: 12px; }
+        .step .comment { color: #2a4d69; font-size: 0.98em; margin-top: 2px; }
+        .next-btn { display: block; margin: 24px auto 0 auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lineární rovnice: Najdi x</h1>
+        <div class="equation" id="equation"></div>
+        <form id="answer-form" autocomplete="off">
+            <div class="input-row">
+                <label for="user-x">x =</label>
+                <input type="number" id="user-x" required autocomplete="off" />
+                <button type="submit">Ověřit</button>
+            </div>
+        </form>
+        <div class="result" id="result"></div>
+        <div class="steps" id="steps"></div>
+        <button class="next-btn" id="next-btn" style="display:none;">Další rovnice</button>
+    </div>
+    <script>
+        // Pomocné funkce pro generování rovnic
+        function getRandomInt(min, max, excludeZero = false) {
+            let n;
+            do {
+                n = Math.floor(Math.random() * (max - min + 1)) + min;
+            } while (excludeZero && n === 0);
+            return n;
+        }
+
+        // Typy rovnic:
+        // 1) ax + b = c
+        // 2) a + bx = c
+        // 3) ax + b = dx + e
+        // 4) a + bx = d + ex
+        // Vždy x na levé, pravé, nebo obou stranách
+        function generateEquation() {
+            const type = getRandomInt(1, 4);
+            let a, b, c, d, e, x, equationStr, solution, steps;
+            switch (type) {
+                case 1: // ax + b = c
+                    x = getRandomInt(-10, 10, true);
+                    a = getRandomInt(-5, 5, true);
+                    b = getRandomInt(-10, 10);
+                    c = a * x + b;
+                    equationStr = `${a === 1 ? '' : a === -1 ? '-' : a}x ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)} = ${c}`;
+                    solution = x;
+                    steps = [
+                        {
+                            eq: `${a === 1 ? '' : a === -1 ? '-' : a}x ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)} = ${c}`,
+                            comment: 'Zadání rovnice.'
+                        },
+                        {
+                            eq: `${a === 1 ? '' : a === -1 ? '-' : a}x = ${c - b}`,
+                            comment: b === 0 ? 'Na levé straně je pouze člen s x.' : `Odečteme ${b >= 0 ? b : '(' + b + ')'} od obou stran, abychom osamostatnili x.`
+                        },
+                        {
+                            eq: `x = ${(c - b) / a}`,
+                            comment: a === 1 ? 'x je již osamostatněné.' : `Vydělíme obě strany ${a === -1 ? '-1' : a}, abychom získali x.`
+                        }
+                    ];
+                    break;
+                case 2: // a + bx = c
+                    x = getRandomInt(-10, 10, true);
+                    b = getRandomInt(-5, 5, true);
+                    a = getRandomInt(-10, 10);
+                    c = b * x + a;
+                    equationStr = `${a} ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)}x = ${c}`;
+                    solution = x;
+                    steps = [
+                        {
+                            eq: `${a} ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)}x = ${c}`,
+                            comment: 'Zadání rovnice.'
+                        },
+                        {
+                            eq: `${b === 1 ? '' : b === -1 ? '-' : b}x = ${c - a}`,
+                            comment: a === 0 ? 'Na levé straně je pouze člen s x.' : `Odečteme ${a >= 0 ? a : '(' + a + ')'} od obou stran, abychom osamostatnili x.`
+                        },
+                        {
+                            eq: `x = ${(c - a) / b}`,
+                            comment: b === 1 ? 'x je již osamostatněné.' : `Vydělíme obě strany ${b === -1 ? '-1' : b}, abychom získali x.`
+                        }
+                    ];
+                    break;
+                case 3: // ax + b = dx + e
+                    x = getRandomInt(-10, 10, true);
+                    a = getRandomInt(-5, 5, true);
+                    d = getRandomInt(-5, 5, true);
+                    while (a === d) d = getRandomInt(-5, 5, true); // aby x nezmizelo
+                    b = getRandomInt(-10, 10);
+                    e = a * x + b - d * x;
+                    equationStr = `${a === 1 ? '' : a === -1 ? '-' : a}x ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)} = ${d === 1 ? '' : d === -1 ? '-' : d}x ${e >= 0 ? '+ ' + e : '- ' + Math.abs(e)}`;
+                    solution = x;
+                    steps = [
+                        {
+                            eq: `${a === 1 ? '' : a === -1 ? '-' : a}x ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)} = ${d === 1 ? '' : d === -1 ? '-' : d}x ${e >= 0 ? '+ ' + e : '- ' + Math.abs(e)}`,
+                            comment: 'Zadání rovnice.'
+                        },
+                        {
+                            eq: `${a - d === 1 ? '' : a - d === -1 ? '-' : a - d}x = ${e - b}`,
+                            comment: d === 0 ? 'Na pravé straně není x.' : `Odečteme ${d === 1 ? '' : d === -1 ? '-' : d}x od obou stran, abychom dostali všechny x na jednu stranu.`
+                        },
+                        {
+                            eq: `x = ${(e - b) / (a - d)}`,
+                            comment: (a - d) === 1 ? 'x je již osamostatněné.' : `Vydělíme obě strany ${a - d}, abychom získali x.`
+                        }
+                    ];
+                    break;
+                case 4: // a + bx = d + ex
+                    x = getRandomInt(-10, 10, true);
+                    b = getRandomInt(-5, 5, true);
+                    e = getRandomInt(-5, 5, true);
+                    while (b === e) e = getRandomInt(-5, 5, true);
+                    a = getRandomInt(-10, 10);
+                    d = b * x + a - e * x;
+                    equationStr = `${a} ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)}x = ${d} ${e >= 0 ? '+ ' + e : '- ' + Math.abs(e)}x`;
+                    solution = x;
+                    steps = [
+                        {
+                            eq: `${a} ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)}x = ${d} ${e >= 0 ? '+ ' + e : '- ' + Math.abs(e)}x`,
+                            comment: 'Zadání rovnice.'
+                        },
+                        {
+                            eq: `${b - e === 1 ? '' : b - e === -1 ? '-' : b - e}x = ${d - a}`,
+                            comment: e === 0 ? 'Na pravé straně není x.' : `Odečteme ${e === 1 ? '' : e === -1 ? '-' : e}x od obou stran, abychom dostali všechny x na jednu stranu.`
+                        },
+                        {
+                            eq: `x = ${(d - a) / (b - e)}`,
+                            comment: (b - e) === 1 ? 'x je již osamostatněné.' : `Vydělíme obě strany ${b - e}, abychom získali x.`
+                        }
+                    ];
+                    break;
+            }
+            return { equationStr, solution, steps };
+        }
+
+        let currentEquation = null;
+
+        function showEquation() {
+            currentEquation = generateEquation();
+            document.getElementById('equation').textContent = currentEquation.equationStr;
+            document.getElementById('user-x').value = '';
+            document.getElementById('result').textContent = '';
+            document.getElementById('steps').innerHTML = '';
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        function showSteps(steps) {
+            const stepsDiv = document.getElementById('steps');
+            stepsDiv.innerHTML = '';
+            steps.forEach((step, i) => {
+                const div = document.createElement('div');
+                div.className = 'step';
+                div.innerHTML = `<b>Krok ${i+1}:</b> ${step.eq}<div class="comment">${step.comment}</div>`;
+                stepsDiv.appendChild(div);
+            });
+        }
+
+        document.getElementById('answer-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userX = parseInt(document.getElementById('user-x').value, 10);
+            if (isNaN(userX)) return;
+            if (userX === currentEquation.solution) {
+                document.getElementById('result').textContent = 'Správně!';
+                document.getElementById('result').style.color = '#2a4d69';
+            } else {
+                document.getElementById('result').textContent = `Špatně, správně je x = ${currentEquation.solution}`;
+                document.getElementById('result').style.color = '#c0392b';
+            }
+            showSteps(currentEquation.steps);
+            document.getElementById('next-btn').style.display = 'block';
+        });
+
+        document.getElementById('next-btn').addEventListener('click', showEquation);
+
+        // První rovnice
+        showEquation();
+    </script>
+</body>
+</html> 
