@@ -126,6 +126,16 @@
     <div class="container">
         <div class="mascot" title="maskot">🦉</div>
         <h1>Lineární rovnice: Najdi x</h1>
+        <div style="text-align:center; margin-bottom: 18px;">
+            <label style="font-size:1.05em; margin-right:10px;">
+                <input type="radio" name="mode" id="mode-positive" value="positive" checked style="accent-color:#3b82f6; margin-right:4px;">
+                Pouze kladná čísla
+            </label>
+            <label style="font-size:1.05em;">
+                <input type="radio" name="mode" id="mode-all" value="all" style="accent-color:#ff7f50; margin-right:4px;">
+                Všechny rovnice
+            </label>
+        </div>
         <div class="equation" id="equation"></div>
         <form id="answer-form" autocomplete="off">
             <div class="input-row">
@@ -155,13 +165,25 @@
         // 4) a + bx = d + ex
         // Vždy x na levé, pravé, nebo obou stranách
         function generateEquation() {
+            // Zjisti režim
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            const onlyPositive = mode === 'positive';
             const type = getRandomInt(1, 4);
             let a, b, c, d, e, x, equationStr, solution, steps;
+            // Pomocné rozsahy
+            const xRange = onlyPositive ? [1, 10] : [-10, 10];
+            const abdeRange = onlyPositive ? [1, 10] : [-10, 10];
+            const abdeRangeNoZero = onlyPositive ? [1, 10] : [-5, 5];
+            const abdeNoZero = (min, max) => {
+                let n;
+                do { n = getRandomInt(min, max); } while (n === 0);
+                return n;
+            };
             switch (type) {
                 case 1: // ax + b = c
-                    x = getRandomInt(-10, 10, true);
-                    a = getRandomInt(-5, 5, true);
-                    b = getRandomInt(-10, 10);
+                    x = getRandomInt(...xRange, true);
+                    a = onlyPositive ? abdeNoZero(1, 5) : getRandomInt(-5, 5, true);
+                    b = onlyPositive ? getRandomInt(1, 10) : getRandomInt(-10, 10);
                     c = a * x + b;
                     equationStr = `${a === 1 ? '' : a === -1 ? '-' : a}x ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)} = ${c}`;
                     solution = x;
@@ -181,9 +203,9 @@
                     ];
                     break;
                 case 2: // a + bx = c
-                    x = getRandomInt(-10, 10, true);
-                    b = getRandomInt(-5, 5, true);
-                    a = getRandomInt(-10, 10);
+                    x = getRandomInt(...xRange, true);
+                    b = onlyPositive ? abdeNoZero(1, 5) : getRandomInt(-5, 5, true);
+                    a = onlyPositive ? getRandomInt(1, 10) : getRandomInt(-10, 10);
                     c = b * x + a;
                     equationStr = `${a} ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)}x = ${c}`;
                     solution = x;
@@ -203,11 +225,11 @@
                     ];
                     break;
                 case 3: // ax + b = dx + e
-                    x = getRandomInt(-10, 10, true);
-                    a = getRandomInt(-5, 5, true);
-                    d = getRandomInt(-5, 5, true);
-                    while (a === d) d = getRandomInt(-5, 5, true); // aby x nezmizelo
-                    b = getRandomInt(-10, 10);
+                    x = getRandomInt(...xRange, true);
+                    a = onlyPositive ? abdeNoZero(1, 5) : getRandomInt(-5, 5, true);
+                    d = onlyPositive ? abdeNoZero(1, 5) : getRandomInt(-5, 5, true);
+                    while (a === d) d = onlyPositive ? abdeNoZero(1, 5) : getRandomInt(-5, 5, true);
+                    b = onlyPositive ? getRandomInt(1, 10) : getRandomInt(-10, 10);
                     e = a * x + b - d * x;
                     equationStr = `${a === 1 ? '' : a === -1 ? '-' : a}x ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)} = ${d === 1 ? '' : d === -1 ? '-' : d}x ${e >= 0 ? '+ ' + e : '- ' + Math.abs(e)}`;
                     solution = x;
@@ -227,11 +249,11 @@
                     ];
                     break;
                 case 4: // a + bx = d + ex
-                    x = getRandomInt(-10, 10, true);
-                    b = getRandomInt(-5, 5, true);
-                    e = getRandomInt(-5, 5, true);
-                    while (b === e) e = getRandomInt(-5, 5, true);
-                    a = getRandomInt(-10, 10);
+                    x = getRandomInt(...xRange, true);
+                    b = onlyPositive ? abdeNoZero(1, 5) : getRandomInt(-5, 5, true);
+                    e = onlyPositive ? abdeNoZero(1, 5) : getRandomInt(-5, 5, true);
+                    while (b === e) e = onlyPositive ? abdeNoZero(1, 5) : getRandomInt(-5, 5, true);
+                    a = onlyPositive ? getRandomInt(1, 10) : getRandomInt(-10, 10);
                     d = b * x + a - e * x;
                     equationStr = `${a} ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)}x = ${d} ${e >= 0 ? '+ ' + e : '- ' + Math.abs(e)}x`;
                     solution = x;
@@ -292,6 +314,10 @@
         });
 
         document.getElementById('next-btn').addEventListener('click', showEquation);
+
+        // Přepnutí režimu vygeneruje novou rovnici
+        document.getElementById('mode-positive').addEventListener('change', showEquation);
+        document.getElementById('mode-all').addEventListener('change', showEquation);
 
         // První rovnice
         showEquation();
