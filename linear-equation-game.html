@@ -305,16 +305,27 @@
             if (stats) return JSON.parse(stats);
             return { total: 0, correct: 0, wrong: 0, wrongExamples: [], correctExamples: [] };
         }
+        function loadTotalSolvedEver() {
+            return parseInt(localStorage.getItem('linear_eq_total_ever') || '0', 10);
+        }
+        function saveTotalSolvedEver(val) {
+            localStorage.setItem('linear_eq_total_ever', val);
+        }
         function saveStats(stats) {
             localStorage.setItem('linear_eq_stats', JSON.stringify(stats));
         }
         function resetStats() {
             localStorage.removeItem('linear_eq_stats');
+            localStorage.removeItem('linear_eq_total_ever');
             renderStats();
         }
         function addStat(isCorrect, example) {
             const stats = loadStats();
             stats.total++;
+            // Zvýším globální počítadlo
+            let ever = loadTotalSolvedEver();
+            ever++;
+            saveTotalSolvedEver(ever);
             if (isCorrect) {
                 stats.correct++;
                 stats.correctExamples.push({
@@ -340,10 +351,11 @@
         }
         function renderStats() {
             const stats = loadStats();
+            const totalEver = loadTotalSolvedEver();
             const percent = stats.total ? Math.round(100 * stats.correct / stats.total) : 0;
             let html = `<div style="background:#fffbe7;border-radius:16px;padding:18px 12px 12px 12px;border:2px solid #ffe066;box-shadow:0 2px 8px #0001;">
+                <div style="font-size:1.05em;margin-bottom:6px;"><b>Řešeno příkladů:</b> ${totalEver}</div>
                 <div style="font-size:1.2em;font-weight:bold;color:#3b82f6;margin-bottom:8px;">Statistika úspěšnosti</div>
-                <div style="font-size:1.05em;margin-bottom:6px;">Vyřešeno příkladů: <b>${stats.total}</b></div>
                 <div style="font-size:1.05em;margin-bottom:6px;">Správně: <b style='color:#2ecc40;'>${stats.correct}</b></div>
                 <div style="font-size:1.05em;margin-bottom:6px;">Špatně: <b style='color:#e74c3c;'>${stats.wrong}</b></div>
                 <div style="font-size:1.05em;margin-bottom:10px;">Úspěšnost: <b>${percent}%</b></div>
