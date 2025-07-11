@@ -303,7 +303,7 @@
         function loadStats() {
             const stats = localStorage.getItem('linear_eq_stats');
             if (stats) return JSON.parse(stats);
-            return { total: 0, correct: 0, wrong: 0, wrongExamples: [] };
+            return { total: 0, correct: 0, wrong: 0, wrongExamples: [], correctExamples: [] };
         }
         function saveStats(stats) {
             localStorage.setItem('linear_eq_stats', JSON.stringify(stats));
@@ -317,6 +317,13 @@
             stats.total++;
             if (isCorrect) {
                 stats.correct++;
+                stats.correctExamples.push({
+                    zadani: example.equationStr,
+                    spravne: example.solution,
+                    uzivatel: example.userAnswer,
+                    steps: example.steps,
+                    mode: example.mode
+                });
             } else {
                 stats.wrong++;
                 // Uložíme zadání, správné řešení, uživatelovu odpověď, kroky a režim
@@ -342,6 +349,17 @@
                 <div style="font-size:1.05em;margin-bottom:10px;">Úspěšnost: <b>${percent}%</b></div>
                 <button onclick="resetStats()" style="margin-bottom:10px;font-size:0.95em;padding:4px 14px;border-radius:8px;background:#ffb347;color:#fff;border:none;cursor:pointer;">Vymazat statistiku</button>
             `;
+            if (stats.correctExamples && stats.correctExamples.length > 0) {
+                html += `<div style='margin-top:10px;font-size:1.08em;font-weight:bold;color:#2ecc40;'>Správně vyřešené příklady:</div>`;
+                html += `<ol style='margin:8px 0 0 18px;padding:0;'>`;
+                stats.correctExamples.forEach((ex, idx) => {
+                    html += `<li style='margin-bottom:8px;'>
+                        <span style='font-size:1em;'>${ex.zadani.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
+                        <button onclick="showCorrectDetail(${idx})" style="margin-left:8px;font-size:0.9em;padding:2px 10px;border-radius:7px;background:#2ecc40;color:#fff;border:none;cursor:pointer;">Zobrazit řešení</button>
+                    </li>`;
+                });
+                html += `</ol>`;
+            }
             if (stats.wrongExamples.length > 0) {
                 html += `<div style='margin-top:10px;font-size:1.08em;font-weight:bold;color:#ff7f50;'>Chybné příklady:</div>`;
                 html += `<ol style='margin:8px 0 0 18px;padding:0;'>`;
@@ -353,7 +371,7 @@
                 });
                 html += `</ol>`;
             }
-            html += `</div><div id='wrong-detail-modal'></div>`;
+            html += `</div><div id='wrong-detail-modal'></div><div id='correct-detail-modal'></div>`;
             document.getElementById('stats').innerHTML = html;
         }
         function showWrongDetail(idx) {
@@ -371,6 +389,22 @@
             html += `<button onclick="document.getElementById('wrong-detail-modal').innerHTML=''" style="margin-top:8px;font-size:0.95em;padding:4px 14px;border-radius:8px;background:#ffb347;color:#fff;border:none;cursor:pointer;">Zavřít</button>`;
             html += `</div>`;
             document.getElementById('wrong-detail-modal').innerHTML = html;
+        }
+        function showCorrectDetail(idx) {
+            const stats = loadStats();
+            const ex = stats.correctExamples[idx];
+            let html = `<div style='background:#e0f7fa;border-radius:14px;padding:18px 14px 10px 14px;border:2px dashed #a0e7e5;margin-top:18px;'>`;
+            html += `<div style='font-size:1.1em;font-weight:bold;color:#3b82f6;margin-bottom:6px;'>Zadání: ${ex.zadani}</div>`;
+            html += `<div style='font-size:1.05em;margin-bottom:4px;'>Tvoje odpověď: <b style='color:#2ecc40;'>x = ${ex.uzivatel}</b></div>`;
+            html += `<div style='font-size:1.05em;margin-bottom:4px;'>Správně: <b style='color:#2ecc40;'>x = ${ex.spravne}</b></div>`;
+            html += `<div style='font-size:0.98em;margin-bottom:8px;'>Režim: <b>${ex.mode === 'positive' ? 'Pouze kladná čísla' : 'Všechny rovnice'}</b></div>`;
+            html += `<div style='margin-bottom:6px;'><b>Postup řešení:</b></div>`;
+            ex.steps.forEach((step, i) => {
+                html += `<div style='margin-bottom:7px;'><b>Krok ${i+1}:</b> ${step.eq}<div style='color:#ff7f50;font-size:0.98em;'>${step.comment}</div></div>`;
+            });
+            html += `<button onclick="document.getElementById('correct-detail-modal').innerHTML=''" style="margin-top:8px;font-size:0.95em;padding:4px 14px;border-radius:8px;background:#ffb347;color:#fff;border:none;cursor:pointer;">Zavřít</button>`;
+            html += `</div>`;
+            document.getElementById('correct-detail-modal').innerHTML = html;
         }
 
         document.getElementById('answer-form').addEventListener('submit', function(e) {
