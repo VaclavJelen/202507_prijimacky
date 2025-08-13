@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Násobilka - Hra</title>
+    <style>
+        body { 
+            font-family: 'Comic Sans MS', 'Comic Sans', cursive, Arial, sans-serif; 
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); 
+            margin: 0; padding: 0; 
+        }
+        .container { 
+            max-width: 500px; 
+            margin: 40px auto; 
+            background: #fffbe7; 
+            border-radius: 24px; 
+            box-shadow: 0 4px 16px #0002; 
+            padding: 36px 28px 32px 28px; 
+            border: 4px solid #ffd93d;
+            position: relative;
+        }
+        .mascot {
+            font-size: 3.2em;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        h1 { 
+            text-align: center; 
+            color: #ff6b6b; 
+            font-size: 2.1em;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .difficulty {
+            text-align: center;
+            margin-bottom: 18px;
+        }
+        .difficulty label {
+            font-size: 1.05em;
+            margin: 0 8px;
+            cursor: pointer;
+        }
+        .difficulty input[type="radio"] {
+            accent-color: #4ecdc4;
+            margin-right: 4px;
+        }
+        .multiplication { 
+            font-size: 2.5em; 
+            text-align: center; 
+            margin: 28px 0 18px 0; 
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        .input-row { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 10px; 
+            margin-bottom: 18px; 
+        }
+        label {
+            font-size: 1.2em;
+            color: #ff6b6b;
+        }
+        input[type="number"] { 
+            font-size: 1.3em; 
+            padding: 6px 12px; 
+            width: 90px; 
+            border-radius: 10px; 
+            border: 2px solid #a8e6cf;
+            background: #fff;
+            transition: border 0.2s;
+        }
+        input[type="number"]:focus {
+            border: 2.5px solid #4ecdc4;
+            outline: none;
+        }
+        button { 
+            font-size: 1.1em; 
+            padding: 8px 22px; 
+            border-radius: 12px; 
+            border: none; 
+            background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 100%); 
+            color: #fff; 
+            cursor: pointer; 
+            font-weight: bold;
+            box-shadow: 0 2px 6px #0001;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+        button:disabled { 
+            background: #eee; 
+            color: #aaa; 
+        }
+        .result { 
+            text-align: center; 
+            font-size: 1.2em; 
+            margin: 14px 0; 
+            font-weight: bold;
+            min-height: 1.5em;
+        }
+        .explanation { 
+            background: #e0f7fa; 
+            border-radius: 14px; 
+            padding: 18px; 
+            margin-top: 22px; 
+            border: 2px dashed #a0e7e5;
+            text-align: center;
+        }
+        .next-btn { 
+            display: block; 
+            margin: 28px auto 0 auto; 
+            background: linear-gradient(90deg, #4ecdc4 0%, #44a08d 100%); 
+            color: #fff; 
+            font-size: 1.1em; 
+            border-radius: 12px; 
+            padding: 10px 28px; 
+            font-weight: bold;
+        }
+        #stats {
+            margin-top: 36px;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 18px 4vw 18px 4vw; }
+            h1 { font-size: 1.3em; }
+            .multiplication { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="mascot" title="maskot">🐰</div>
+        <h1>Násobilka: Procvičování</h1>
+        <div class="difficulty">
+            <label>
+                <input type="radio" name="difficulty" id="easy" value="easy" checked>
+                Malá násobilka (1-10)
+            </label>
+            <label>
+                <input type="radio" name="difficulty" id="medium" value="medium">
+                Střední (1-15)
+            </label>
+            <label>
+                <input type="radio" name="difficulty" id="hard" value="hard">
+                Velká (1-20)
+            </label>
+        </div>
+        <div class="multiplication" id="multiplication"></div>
+        <form id="answer-form" autocomplete="off">
+            <div class="input-row">
+                <label for="user-answer">Výsledek:</label>
+                <input type="number" id="user-answer" required autocomplete="off" />
+                <button type="submit">Ověřit</button>
+            </div>
+        </form>
+        <div class="result" id="result"></div>
+        <div class="explanation" id="explanation"></div>
+        <button class="next-btn" id="next-btn" style="display:none;">Další příklad</button>
+        <div id="stats"></div>
+    </div>
+    <script>
+        // Pomocné funkce
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Generování příkladu podle obtížnosti
+        function generateMultiplication() {
+            const difficulty = document.querySelector('input[name="difficulty"]:checked').value;
+            let maxNum;
+            switch (difficulty) {
+                case 'easy': maxNum = 10; break;
+                case 'medium': maxNum = 15; break;
+                case 'hard': maxNum = 20; break;
+                default: maxNum = 10;
+            }
+            
+            const a = getRandomInt(1, maxNum);
+            const b = getRandomInt(1, maxNum);
+            const result = a * b;
+            
+            return {
+                a: a,
+                b: b,
+                result: result,
+                question: `${a} × ${b} = ?`
+            };
+        }
+
+        // Statistiky v localStorage
+        function loadStats() {
+            const stats = localStorage.getItem('multiplication_stats');
+            if (stats) return JSON.parse(stats);
+            return { total: 0, correct: 0, wrong: 0, wrongExamples: [], correctExamples: [] };
+        }
+        
+        function loadTotalSolvedEver() {
+            return parseInt(localStorage.getItem('multiplication_total_ever') || '0', 10);
+        }
+        
+        function saveTotalSolvedEver(val) {
+            localStorage.setItem('multiplication_total_ever', val);
+        }
+        
+        function saveStats(stats) {
+            localStorage.setItem('multiplication_stats', JSON.stringify(stats));
+        }
+        
+        function resetStats() {
+            localStorage.removeItem('multiplication_stats');
+            localStorage.removeItem('multiplication_total_ever');
+            renderStats();
+        }
+        
+        function addStat(isCorrect, example) {
+            const stats = loadStats();
+            stats.total++;
+            
+            // Zvýším globální počítadlo
+            let ever = loadTotalSolvedEver();
+            ever++;
+            saveTotalSolvedEver(ever);
+            
+            if (isCorrect) {
+                stats.correct++;
+                stats.correctExamples.push({
+                    zadani: example.question,
+                    spravne: example.result,
+                    uzivatel: example.userAnswer,
+                    a: example.a,
+                    b: example.b
+                });
+            } else {
+                stats.wrong++;
+                stats.wrongExamples.push({
+                    zadani: example.question,
+                    spravne: example.result,
+                    uzivatel: example.userAnswer,
+                    a: example.a,
+                    b: example.b
+                });
+            }
+            saveStats(stats);
+            renderStats();
+        }
+        
+        function renderStats() {
+            const stats = loadStats();
+            const totalEver = loadTotalSolvedEver();
+            const percent = stats.total ? Math.round(100 * stats.correct / stats.total) : 0;
+            
+            let html = `<div style="background:#fffbe7;border-radius:16px;padding:18px 12px 12px 12px;border:2px solid #ffd93d;box-shadow:0 2px 8px #0001;">
+                <div style="font-size:1.05em;margin-bottom:6px;"><b>Řešeno příkladů:</b> ${totalEver}</div>
+                <div style="font-size:1.2em;font-weight:bold;color:#4ecdc4;margin-bottom:8px;">Statistika úspěšnosti</div>
+                <div style="font-size:1.05em;margin-bottom:6px;">Správně: <b style='color:#2ecc40;'>${stats.correct}</b></div>
+                <div style="font-size:1.05em;margin-bottom:6px;">Špatně: <b style='color:#e74c3c;'>${stats.wrong}</b></div>
+                <div style="font-size:1.05em;margin-bottom:10px;">Úspěšnost: <b>${percent}%</b></div>
+                <button onclick="resetStats()" style="margin-bottom:10px;font-size:0.95em;padding:4px 14px;border-radius:8px;background:#ff9a9e;color:#fff;border:none;cursor:pointer;">Vymazat statistiku</button>
+            `;
+            
+            if (stats.correctExamples && stats.correctExamples.length > 0) {
+                html += `<div style='margin-top:10px;font-size:1.08em;font-weight:bold;color:#2ecc40;'>Správně vyřešené příklady:</div>`;
+                html += `<ol style='margin:8px 0 0 18px;padding:0;'>`;
+                stats.correctExamples.forEach((ex, idx) => {
+                    html += `<li style='margin-bottom:8px;'>
+                        <span style='font-size:1em;'>${ex.zadani}</span>
+                        <button onclick="showCorrectDetail(${idx})" style="margin-left:8px;font-size:0.9em;padding:2px 10px;border-radius:7px;background:#2ecc40;color:#fff;border:none;cursor:pointer;">Zobrazit</button>
+                    </li>`;
+                });
+                html += `</ol>`;
+            }
+            
+            if (stats.wrongExamples.length > 0) {
+                html += `<div style='margin-top:10px;font-size:1.08em;font-weight:bold;color:#ff6b6b;'>Chybné příklady:</div>`;
+                html += `<ol style='margin:8px 0 0 18px;padding:0;'>`;
+                stats.wrongExamples.forEach((ex, idx) => {
+                    html += `<li style='margin-bottom:8px;'>
+                        <span style='font-size:1em;'>${ex.zadani}</span>
+                        <button onclick="showWrongDetail(${idx})" style="margin-left:8px;font-size:0.9em;padding:2px 10px;border-radius:7px;background:#4ecdc4;color:#fff;border:none;cursor:pointer;">Zobrazit</button>
+                    </li>`;
+                });
+                html += `</ol>`;
+            }
+            
+            html += `</div><div id='wrong-detail-modal'></div><div id='correct-detail-modal'></div>`;
+            document.getElementById('stats').innerHTML = html;
+        }
+        
+        function showWrongDetail(idx) {
+            const stats = loadStats();
+            const ex = stats.wrongExamples[idx];
+            let html = `<div style='background:#e0f7fa;border-radius:14px;padding:18px 14px 10px 14px;border:2px dashed #a0e7e5;margin-top:18px;'>`;
+            html += `<div style='font-size:1.1em;font-weight:bold;color:#4ecdc4;margin-bottom:6px;'>Zadání: ${ex.zadani}</div>`;
+            html += `<div style='font-size:1.05em;margin-bottom:4px;'>Tvoje odpověď: <b style='color:#e74c3c;'>${ex.uzivatel}</b></div>`;
+            html += `<div style='font-size:1.05em;margin-bottom:4px;'>Správně: <b style='color:#2ecc40;'>${ex.spravne}</b></div>`;
+            html += `<div style='margin-bottom:6px;'><b>Vysvětlení:</b></div>`;
+            html += `<div style='font-size:1.05em;'>${ex.a} × ${ex.b} = ${ex.spravne}</div>`;
+            html += `<div style='font-size:0.98em;color:#666;margin-top:4px;'>${ex.a} krát ${ex.b} se rovná ${ex.spravne}</div>`;
+            html += `<button onclick="document.getElementById('wrong-detail-modal').innerHTML=''" style="margin-top:8px;font-size:0.95em;padding:4px 14px;border-radius:8px;background:#ff9a9e;color:#fff;border:none;cursor:pointer;">Zavřít</button>`;
+            html += `</div>`;
+            document.getElementById('wrong-detail-modal').innerHTML = html;
+        }
+        
+        function showCorrectDetail(idx) {
+            const stats = loadStats();
+            const ex = stats.correctExamples[idx];
+            let html = `<div style='background:#e0f7fa;border-radius:14px;padding:18px 14px 10px 14px;border:2px dashed #a0e7e5;margin-top:18px;'>`;
+            html += `<div style='font-size:1.1em;font-weight:bold;color:#4ecdc4;margin-bottom:6px;'>Zadání: ${ex.zadani}</div>`;
+            html += `<div style='font-size:1.05em;margin-bottom:4px;'>Tvoje odpověď: <b style='color:#2ecc40;'>${ex.uzivatel}</b></div>`;
+            html += `<div style='font-size:1.05em;margin-bottom:4px;'>Správně: <b style='color:#2ecc40;'>${ex.spravne}</b></div>`;
+            html += `<div style='margin-bottom:6px;'><b>Vysvětlení:</b></div>`;
+            html += `<div style='font-size:1.05em;'>${ex.a} × ${ex.b} = ${ex.spravne}</div>`;
+            html += `<div style='font-size:0.98em;color:#666;margin-top:4px;'>${ex.a} krát ${ex.b} se rovná ${ex.spravne}</div>`;
+            html += `<button onclick="document.getElementById('correct-detail-modal').innerHTML=''" style="margin-top:8px;font-size:0.95em;padding:4px 14px;border-radius:8px;background:#ff9a9e;color:#fff;border:none;cursor:pointer;">Zavřít</button>`;
+            html += `</div>`;
+            document.getElementById('correct-detail-modal').innerHTML = html;
+        }
+
+        let currentExample = null;
+
+        function showExample() {
+            currentExample = generateMultiplication();
+            document.getElementById('multiplication').textContent = currentExample.question;
+            document.getElementById('user-answer').value = '';
+            document.getElementById('result').textContent = '';
+            document.getElementById('explanation').innerHTML = '';
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        function showExplanation(isCorrect) {
+            const explanationDiv = document.getElementById('explanation');
+            if (isCorrect) {
+                explanationDiv.innerHTML = `
+                    <div style="font-size:1.1em;color:#2ecc40;margin-bottom:8px;">✅ Správně!</div>
+                    <div style="font-size:1.05em;">${currentExample.a} × ${currentExample.b} = ${currentExample.result}</div>
+                    <div style="font-size:0.98em;color:#666;margin-top:4px;">${currentExample.a} krát ${currentExample.b} se rovná ${currentExample.result}</div>
+                `;
+            } else {
+                explanationDiv.innerHTML = `
+                    <div style="font-size:1.1em;color:#e74c3c;margin-bottom:8px;">❌ Špatně!</div>
+                    <div style="font-size:1.05em;">Správně je: ${currentExample.a} × ${currentExample.b} = ${currentExample.result}</div>
+                    <div style="font-size:0.98em;color:#666;margin-top:4px;">${currentExample.a} krát ${currentExample.b} se rovná ${currentExample.result}</div>
+                `;
+            }
+        }
+
+        document.getElementById('answer-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userAnswer = parseInt(document.getElementById('user-answer').value, 10);
+            if (isNaN(userAnswer)) return;
+            
+            const isCorrect = userAnswer === currentExample.result;
+            
+            if (isCorrect) {
+                document.getElementById('result').textContent = 'Správně! 🎉';
+                document.getElementById('result').style.color = '#2ecc40';
+            } else {
+                document.getElementById('result').textContent = `Špatně, správně je ${currentExample.result}`;
+                document.getElementById('result').style.color = '#e74c3c';
+            }
+            
+            showExplanation(isCorrect);
+            document.getElementById('next-btn').style.display = 'block';
+            
+            // Uložím statistiku
+            addStat(isCorrect, {
+                question: currentExample.question,
+                result: currentExample.result,
+                userAnswer: userAnswer,
+                a: currentExample.a,
+                b: currentExample.b
+            });
+        });
+
+        document.getElementById('next-btn').addEventListener('click', showExample);
+
+        // Přepnutí obtížnosti vygeneruje nový příklad
+        document.getElementById('easy').addEventListener('change', showExample);
+        document.getElementById('medium').addEventListener('change', showExample);
+        document.getElementById('hard').addEventListener('change', showExample);
+
+        // První příklad
+        showExample();
+        
+        // Po načtení stránky vykresli statistiku
+        renderStats();
+    </script>
+</body>
+</html> 
